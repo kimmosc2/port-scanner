@@ -28,22 +28,38 @@ func init() {
 }
 
 func parseFlag() {
-    flag.Parse()
-    if ip == "" {
-        log.Fatal("empty address")
-    }
+
     // TODO protocol and port unused.
 }
 
 func main() {
-    parseFlag()
+    flag.Parse()
+    if ip == "" {
+        log.Fatal("empty address")
+    }
+    if port == 0 {
+        allScan()
+    } else {
+        designatedScan()
+    }
+    fmt.Println("fetch complete")
+}
+
+func designatedScan() {
+    wg := new(sync.WaitGroup)
+    wg.Add(1)
+    go Scan(wg, ip, port)
+    wg.Wait()
+}
+
+// allScan() scan all port
+func allScan() {
     wg := new(sync.WaitGroup)
     for p := minPort; p < maxPort; p++ {
         wg.Add(1)
         go Scan(wg, ip, p)
     }
     wg.Wait()
-    fmt.Println("fetch complete")
 }
 
 func Scan(wg *sync.WaitGroup, targetAddress string, port int) {
