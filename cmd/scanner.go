@@ -1,7 +1,9 @@
 package main
 
 import (
+    "flag"
     "fmt"
+    "log"
     "net"
     "port-scanner/table"
     "strconv"
@@ -13,12 +15,32 @@ const (
     minPort int = 1
 )
 
+var (
+    protocol string // network protocol
+    ip       string // target ip address
+    port     int    // designated port
+)
+
+func init() {
+    flag.StringVar(&protocol, "p", "tcp", "network protocol,tcp,udp and so on")
+    flag.StringVar(&ip, "ip", "", "target ip address")
+    flag.IntVar(&port, "port", 0, "target tcp port,if unspecified,default 1-65535")
+}
+
+func parseFlag() {
+    flag.Parse()
+    if ip == "" {
+        log.Fatal("empty address")
+    }
+    // TODO protocol and port unused.
+}
 
 func main() {
+    parseFlag()
     wg := new(sync.WaitGroup)
     for p := minPort; p < maxPort; p++ {
         wg.Add(1)
-        go Scan(wg, "127.0.0.1", p)
+        go Scan(wg, ip, p)
     }
     wg.Wait()
     fmt.Println("fetch complete")
