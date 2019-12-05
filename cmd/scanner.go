@@ -8,6 +8,7 @@ import (
     "port-scanner/table"
     "strconv"
     "sync"
+    "time"
 )
 
 const (
@@ -21,6 +22,11 @@ var (
     ip       string // target ip address
     port     int    // designated port
 )
+
+type Pool struct {
+    Queue chan struct{}
+    sync.WaitGroup
+}
 
 func init() {
     flag.BoolVar(&help, "h", false, "help information")
@@ -49,25 +55,26 @@ func main() {
 }
 
 func designatedScan() {
-    wg := new(sync.WaitGroup)
-    wg.Add(1)
-    go Scan(wg, ip, port)
-    wg.Wait()
+    pool := new(Pool)
+    pool.Add(1)
+    go Scan(pool, ip, port)
+    pool.Wait()
 }
 
 // allScan() scan all port
 func allScan() {
-    wg := new(sync.WaitGroup)
+    pool := new(Pool)
+    pool.Queue = make(chan struct{}, 5000)
     for p := minPort; p < maxPort; p++ {
-        wg.Add(1)
-        go Scan(wg, ip, p)
+        pool.Queue <- struct{}{}
+        pool.Add(1)
+        go Scan(pool, ip, p)
     }
-    wg.Wait()
+    pool.Wait()
 }
 
-func Scan(wg *sync.WaitGroup, targetAddress string, port int) {
-    defer wg.Done()
-    _, err := net.Dial("tcp", targetAddress+":"+strconv.Itoa(port))
+func Scan(pool *Pool, targetAddress string, port int) {
+    _, err := net.DialTimeout("tcp", targetAddress+":"+strconv.Itoa(port), time.Second*3)
     if err == nil {
         result := table.GetPossibility(port)
         if result != "" {
@@ -76,4 +83,6 @@ func Scan(wg *sync.WaitGroup, targetAddress string, port int) {
             fmt.Printf("live port:[%5d]\n", port)
         }
     }
+    pool.Done()
+    <-pool.Queue
 }
