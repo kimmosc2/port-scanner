@@ -3,8 +3,8 @@ package main
 import (
     "flag"
     "fmt"
-    "log"
     "net"
+    "os"
     "port-scanner/table"
     "strconv"
     "sync"
@@ -16,26 +16,29 @@ const (
 )
 
 var (
+    help     bool   // help info
     protocol string // network protocol
     ip       string // target ip address
     port     int    // designated port
 )
 
 func init() {
+    flag.BoolVar(&help, "h", false, "help information")
     flag.StringVar(&protocol, "p", "tcp", "network protocol,tcp,udp and so on")
     flag.StringVar(&ip, "ip", "", "target ip address")
     flag.IntVar(&port, "port", 0, "target tcp port,if unspecified,default 1-65535")
 }
 
-func parseFlag() {
-
-    // TODO protocol and port unused.
-}
-
 func main() {
     flag.Parse()
+    if help {
+        flag.Usage()
+        os.Exit(0)
+    }
     if ip == "" {
-        log.Fatal("empty address")
+        fmt.Println("empty ip address")
+        flag.Usage()
+        os.Exit(0)
     }
     if port == 0 {
         allScan()
