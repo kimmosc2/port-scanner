@@ -13,8 +13,6 @@ a simple hack tool,build with Go.
 - 指定主机全端口扫描
 - 指定主机特定端口扫描
 - [伪]猜测目标端口可能的应用程序
-## 目标
-个人工具集
 
 ## 作者
 [BuTn](https://github.com/kimmosc2)
