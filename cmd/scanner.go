@@ -21,6 +21,7 @@ var (
     protocol string // network protocol
     ip       string // target ip address
     port     int    // designated port
+    version  bool   // version
 )
 
 type Pool struct {
@@ -33,27 +34,40 @@ func init() {
     flag.StringVar(&protocol, "p", "tcp", "network protocol,tcp,udp and so on")
     flag.StringVar(&ip, "ip", "", "target ip address")
     flag.IntVar(&port, "port", 0, "target tcp port,if unspecified,default 1-65535")
+    flag.BoolVar(&version,"version",false,"show program version")
 }
 
 func main() {
     flag.Parse()
+    // help information
     if help {
         flag.Usage()
-        os.Exit(0)
+        os.Exit(1)
     }
+    // version information
+    if version {
+        fmt.Println("port-scanner version:1.0.191205")
+        fmt.Println("Author:BuTn<https://github.com/kimmosc2>")
+        os.Exit(1)
+    }
+    // ip not null
     if ip == "" {
         fmt.Println("empty ip address")
         flag.Usage()
         os.Exit(0)
     }
+
     if port == 0 {
         allScan()
+    // single
     } else {
         designatedScan()
     }
+    fmt.Println()
     fmt.Println("fetch complete")
 }
 
+// single scan
 func designatedScan() {
     pool := new(Pool)
     pool.Add(1)
@@ -61,7 +75,10 @@ func designatedScan() {
     pool.Wait()
 }
 
-// allScan() scan all port
+// allScan() scan all port,allScan use channel and
+// mutex build a pool to limit goroutine number, more
+// goroutine will set up more connect, the system can't
+// set up socket,this will effect the result.
 func allScan() {
     pool := new(Pool)
     pool.Queue = make(chan struct{}, 5000)
@@ -72,6 +89,7 @@ func allScan() {
     }
     pool.Wait()
 }
+
 
 func Scan(pool *Pool, targetAddress string, port int) {
     _, err := net.DialTimeout("tcp", targetAddress+":"+strconv.Itoa(port), time.Second*3)
